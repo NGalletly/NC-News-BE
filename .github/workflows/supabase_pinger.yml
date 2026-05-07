@@ -20,7 +20,7 @@ jobs:
           -H "apikey: $SUPABASE_ANON_KEY" \
           -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
           -H "Content-Type: application/json" \
-          -H "Prefer: return=minimal" \
+          -H "Prefer: return=representation" \
           -d "{ \"last_ping\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\" }")
 
           if [ "$STATUS_CODE" -eq 204 ] || [ "$STATUS_CODE" -eq 200 ]; then
@@ -29,3 +29,5 @@ jobs:
             echo "ERROR: Database update failed with status $STATUS_CODE"
             exit 1
           fi
+
+          curl -X GET "$SUPABASE_URL/rest/v1/pinger?id=eq.1" -H "apikey: $SUPABASE_ANON_KEY"
