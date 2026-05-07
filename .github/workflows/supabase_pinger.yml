@@ -13,11 +13,19 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ]; then
-            echo "ERROR: SUPABASE_URL is empty. Check GitHub Settings > Secrets."
+          echo "Sending PATCH request to update heartbeat..."
+
+          # This updates the 'last_ping' column for row ID 1 to 'now()'
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$SUPABASE_URL/rest/v1/pinger?id=eq.1" \
+          -H "apikey: $SUPABASE_ANON_KEY" \
+          -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+          -H "Content-Type: application/json" \
+          -H "Prefer: return=minimal" \
+          -d "{ \"last_ping\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\" }")
+
+          if [ "$STATUS_CODE" -eq 204 ] || [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Successfully updated heartbeat. Status: $STATUS_CODE"
+          else
+            echo "ERROR: Database update failed with status $STATUS_CODE"
             exit 1
           fi
-
-          curl -i -X GET "$SUPABASE_URL/rest/v1/articles?select=article_id&limit=1" \
-          -H "apikey: $SUPABASE_ANON_KEY" \
-          -H "Authorization: Bearer $SUPABASE_ANON_KEY"
